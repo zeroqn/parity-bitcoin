@@ -14,5 +14,7 @@ build_rpc_trait! {
         fn get_phone_pub_address(&self, String) -> Result<String, Error>;
         #[rpc(name = "pay2phone")]
         fn pay_to_phone(&self, String, f64) -> Result<H256, Error>;
+        #[rpc(name = "getbalance")]
+        fn get_balance(&self, String) -> Result<String, Error>;
     }
 }

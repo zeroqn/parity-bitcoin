@@ -30,6 +30,7 @@ pub trait InstPayClientCoreApi: Send + Sync + 'static {
     ) -> Result<GlobalTransaction, String>;
     fn get_phone_pub_address(&self, phone: String) -> Result<String, Error>;
     fn pay_to_phone(&self, phone: String, amount: f64) -> Result<H256, Error>;
+    fn get_balance(&self, account: String) -> Result<String, Error>;
 }
 
 pub struct InstPayClientCore {
@@ -63,7 +64,7 @@ impl InstPayClientCore {
         let kp = Self::gen_keypair_from_phone(phone);
         println!("{:?}", kp);
         let address = kp.address().to_string();
-        let amount_in_satoshis = (amount * (chain::constants::SATOSHIS_IN_COIN as f64)) as u64;
+        let _amount_in_satoshis = (amount * (chain::constants::SATOSHIS_IN_COIN as f64)) as u64;
 
         let output = Command::new("bitcoin-cli")
             .args(&["-regtest", "sendtoaddress", &address, &amount.to_string()])
@@ -157,6 +158,20 @@ impl InstPayClientCoreApi for InstPayClientCore {
     fn pay_to_phone(&self, phone: String, amount: f64) -> Result<H256, Error> {
         InstPayClientCore::do_pay_to_phone(&phone, amount)
     }
+
+    fn get_balance(&self, account: String) -> Result<String, Error> {
+        use std::process;
+
+        let output = Command::new("bitcoin-cli")
+            .args(&["-regtest", "getbalance", &account])
+            .stdout(process::Stdio::piped())
+            .output()
+            .expect("fail to send payment");
+
+        let output = String::from_utf8_lossy(&output.stdout);
+        let output = output.trim_right_matches('\n');
+        Ok(output.to_string())
+    }
 }
 
 impl<T> InstPayClient<T>
@@ -199,5 +214,9 @@ where
 
     fn pay_to_phone(&self, phone: String, amount: f64) -> Result<H256, Error> {
         self.core.pay_to_phone(phone, amount)
+    }
+
+    fn get_balance(&self, account: String) -> Result<String, Error> {
+        self.core.get_balance(account)
     }
 }
